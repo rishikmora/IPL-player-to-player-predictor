@@ -1,20 +1,13 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from xgboost import XGBRegressor
+from sklearn.metrics import r2_score
 
-# ==============================
-# CONFIG
-# ==============================
 DELIVERIES_PATH = "deliveries.csv"
 MATCHES_PATH = "matches.csv"
-FORM_WINDOW = 30
 
 st.set_page_config(page_title="IPL Predictor", layout="wide")
 
-# ==============================
-# LOAD DATA
-# ==============================
 @st.cache_data
 def load_data():
     deliveries = pd.read_csv(DELIVERIES_PATH)
@@ -23,152 +16,148 @@ def load_data():
     deliveries.rename(columns={"batter": "batsman"}, inplace=True)
 
     df = deliveries.merge(matches, left_on="match_id", right_on="id")
-    df = df.dropna(subset=["batsman", "bowler"])
+    df = df.dropna(subset=["batsman", "bowler", "city"])
 
-    df["match_order"] = df["match_id"].rank(method="dense").astype(int)
     return df
 
 
-# ==============================
-# FEATURE ENGINEERING
-# ==============================
 @st.cache_data
-def create_features(df):
-    df = df.sort_values(["batsman", "match_order", "over", "ball"])
+def create_dataset(df):
 
-    df["recent_runs"] = (
-        df.groupby("batsman")["batsman_runs"]
-        .rolling(FORM_WINDOW, min_periods=1)
-        .sum()
-        .reset_index(0, drop=True)
-    )
+    # ==========================
+    # AGGREGATE MATCHUP DATA
+    # ==========================
+    grouped = df.groupby(["batsman", "bowler", "city"]).agg({
+        "batsman_runs": ["sum", "count"],
+        "is_wicket": "sum",
+        "total_runs": "mean"
+    }).reset_index()
 
-    df["recent_balls"] = (
-        df.groupby("batsman")["batsman_runs"]
-        .rolling(FORM_WINDOW, min_periods=1)
-        .count()
-        .reset_index(0, drop=True)
-    )
-
-    df["recent_sr"] = (df["recent_runs"] / df["recent_balls"]) * 100
-
-    df["cumulative_runs"] = df.groupby("match_id")["total_runs"].cumsum()
-    df["wickets_fallen"] = df.groupby("match_id")["is_wicket"].cumsum()
-
-    df["current_run_rate"] = df["cumulative_runs"] / (df["over"] + 1)
-    df["pressure_index"] = df["current_run_rate"] * (1 + df["wickets_fallen"] * 0.1)
-
-    df["is_powerplay"] = (df["over"] <= 6).astype(int)
-    df["is_death"] = (df["over"] >= 16).astype(int)
-
-    venue_stats = df.groupby("venue")["total_runs"].mean().to_dict()
-    df["venue_avg_runs"] = df["venue"].map(venue_stats)
-    df["venue_avg_runs"] = df["venue_avg_runs"] / df["venue_avg_runs"].max()
-
-    df["batsman_enc"] = df["batsman"].astype("category").cat.codes
-    df["bowler_enc"] = df["bowler"].astype("category").cat.codes
-    df["batting_team_enc"] = df["batting_team"].astype("category").cat.codes
-    df["bowling_team_enc"] = df["bowling_team"].astype("category").cat.codes
-
-    df["temp"] = 30
-    df["humidity"] = 60
-
-    return df.fillna(0)
-
-
-# ==============================
-# TRAIN MODEL
-# ==============================
-@st.cache_resource
-def train_model(df):
-    features = [
-        "batsman_enc","bowler_enc","recent_sr",
-        "venue_avg_runs","batting_team_enc","bowling_team_enc",
-        "is_powerplay","is_death",
-        "current_run_rate","pressure_index",
-        "temp","humidity"
+    grouped.columns = [
+        "batsman", "bowler", "city",
+        "total_runs", "balls",
+        "wickets",
+        "avg_total_runs"
     ]
 
-    target = "batsman_runs"
+    # target: runs per ball
+    grouped["runs_per_ball"] = grouped["total_runs"] / grouped["balls"]
+
+    # batsman overall avg
+    bat_avg = df.groupby("batsman")["batsman_runs"].mean()
+    grouped["bat_avg"] = grouped["batsman"].map(bat_avg)
+
+    # bowler economy
+    bowl_eco = df.groupby("bowler")["total_runs"].mean()
+    grouped["bowl_eco"] = grouped["bowler"].map(bowl_eco)
+
+    # venue scoring
+    venue_avg = df.groupby("city")["total_runs"].mean()
+    grouped["venue_avg"] = grouped["city"].map(venue_avg)
+
+    # encoding
+    grouped["bat_enc"] = grouped["batsman"].astype("category").cat.codes
+    grouped["bowl_enc"] = grouped["bowler"].astype("category").cat.codes
+    grouped["city_enc"] = grouped["city"].astype("category").cat.codes
+
+    return grouped.fillna(0)
+
+
+@st.cache_resource
+def train_model(df):
+
+    features = [
+        "bat_enc", "bowl_enc", "city_enc",
+        "bat_avg", "bowl_eco", "venue_avg",
+        "wickets", "balls"
+    ]
+
+    target = "runs_per_ball"
+
+    split = int(len(df) * 0.8)
+
+    train = df.iloc[:split]
+    test = df.iloc[split:]
+
+    X_train, y_train = train[features], train[target]
+    X_test, y_test = test[features], test[target]
 
     model = XGBRegressor(
-        n_estimators=200,
+        n_estimators=300,
         max_depth=6,
         learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        n_jobs=-1
+        subsample=0.9,
+        colsample_bytree=0.9,
+        random_state=42
     )
 
-    model.fit(df[features], df[target])
+    model.fit(X_train, y_train)
 
-    return model, features
+    preds = model.predict(X_test)
+    score = r2_score(y_test, preds)
+
+    return model, features, score
 
 
-# ==============================
-# PREDICTION
-# ==============================
 def predict_runs(df, model, features, batsman, bowler, city, balls):
+
     data = df[
         (df["batsman"] == batsman) &
         (df["bowler"] == bowler) &
-        (df["city"].astype(str) == city)
+        (df["city"] == city)
     ]
 
     if len(data) == 0:
         return None
 
-    latest = data.iloc[-1]
-    X = latest[features].values.reshape(1, -1)
+    row = data.iloc[0]
+    X = row[features].values.reshape(1, -1)
 
-    total = 0
-    for _ in range(balls):
-        total += model.predict(X)[0]
+    runs_per_ball = model.predict(X)[0]
 
-    return round(total, 2)
+    return round(runs_per_ball * balls, 2)
 
 
 # ==============================
 # UI
 # ==============================
-st.title("🏏 IPL Player vs Player Predictor")
+st.title("🏏 IPL Predictor (Stable Model)")
 
 df = load_data()
-df = create_features(df)
-model, features = train_model(df)
+data = create_dataset(df)
+model, features, score = train_model(data)
 
-# MODE
-mode = st.radio("Select Mode", ["Batsman First", "Bowler First"])
+st.sidebar.write("Model R²:", round(score, 3))
+
+mode = st.radio("Mode", ["Batsman First", "Bowler First"])
 
 if mode == "Batsman First":
-    batsman = st.selectbox("Select Batsman", sorted(df["batsman"].astype(str).unique()))
-    bowler_list = df[df["batsman"] == batsman]["bowler"].astype(str).unique()
-    bowler = st.selectbox("Select Bowler", sorted(bowler_list))
+    batsman = st.selectbox("Batsman", sorted(data["batsman"].unique()))
+    bowlers = data[data["batsman"] == batsman]["bowler"].unique()
+    bowler = st.selectbox("Bowler", sorted(bowlers))
 else:
-    bowler = st.selectbox("Select Bowler", sorted(df["bowler"].astype(str).unique()))
-    batsman_list = df[df["bowler"] == bowler]["batsman"].astype(str).unique()
-    batsman = st.selectbox("Select Batsman", sorted(batsman_list))
+    bowler = st.selectbox("Bowler", sorted(data["bowler"].unique()))
+    batsmen = data[data["bowler"] == bowler]["batsman"].unique()
+    batsman = st.selectbox("Batsman", sorted(batsmen))
 
-# CITY FIX (IMPORTANT)
-matchup = df[(df["batsman"] == batsman) & (df["bowler"] == bowler)]
-
-cities = matchup["city"].dropna().astype(str).unique()
+cities = data[
+    (data["batsman"] == batsman) &
+    (data["bowler"] == bowler)
+]["city"].unique()
 
 if len(cities) == 0:
     st.error("No city data available")
     st.stop()
 
-city = st.selectbox("Select City", sorted(cities))
+city = st.selectbox("City", sorted(cities))
 
-# PREDICT BUTTON
 if st.button("Predict"):
     st.subheader("📊 Predictions")
 
     for balls in [30, 40, 50]:
-        result = predict_runs(df, model, features, batsman, bowler, city, balls)
+        result = predict_runs(data, model, features, batsman, bowler, city, balls)
 
-        if result is None:
-            st.write(f"{balls} balls → No data")
-        else:
+        if result:
             st.success(f"{balls} balls → {result} runs")
+        else:
+            st.write(f"{balls} balls → No data")
