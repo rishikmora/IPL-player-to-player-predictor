@@ -1,90 +1,127 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from xgboost import XGBRegressor
 from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
 
-DELIVERIES_PATH = "deliveries.csv"
-MATCHES_PATH = "matches.csv"
+DATA_PATH = "new_ipl.csv"
 
 st.set_page_config(page_title="IPL Predictor", layout="wide")
 
+# ==============================
+# LOAD
+# ==============================
 @st.cache_data
 def load_data():
-    deliveries = pd.read_csv(DELIVERIES_PATH)
-    matches = pd.read_csv(MATCHES_PATH)
+    df = pd.read_csv(DATA_PATH)
 
-    deliveries.rename(columns={"batter": "batsman"}, inplace=True)
+    df.rename(columns={
+        "batter": "batsman",
+        "runs_batter": "batsman_runs"
+    }, inplace=True)
 
-    df = deliveries.merge(matches, left_on="match_id", right_on="id")
-    df = df.dropna(subset=["batsman", "bowler", "city"])
+    df["over"] = pd.to_numeric(df["over"], errors="coerce")
+    df = df.dropna(subset=["batsman", "bowler", "city", "over"])
 
     return df
 
 
+# ==============================
+# CREATE DATASET
+# ==============================
 @st.cache_data
 def create_dataset(df):
 
-    # ==========================
-    # AGGREGATE MATCHUP DATA
-    # ==========================
-    grouped = df.groupby(["batsman", "bowler", "city"]).agg({
-        "batsman_runs": ["sum", "count"],
-        "is_wicket": "sum",
-        "total_runs": "mean"
+    phase = pd.cut(df["over"], bins=[0,6,15,20], labels=[0,1,2])
+    df["phase"] = phase.cat.codes.replace(-1,1)
+
+    df["recent_form"] = df.groupby("batsman")["batsman_runs"].transform(
+        lambda x: x.rolling(30, min_periods=10).mean()
+    )
+
+    if "runs_target" in df.columns:
+        df["cum_runs"] = df.groupby("match_id")["batsman_runs"].cumsum()
+        df["pressure"] = df["runs_target"] - df["cum_runs"]
+    else:
+        df["pressure"] = 0
+
+    global_avg = df["batsman_runs"].mean()
+
+    grouped = df.groupby(["batsman","bowler","city"]).agg({
+        "batsman_runs": ["sum","count"],
+        "phase": "mean",
+        "bat_pos": "mean",
+        "pressure": "mean",
+        "innings": "mean"
     }).reset_index()
 
     grouped.columns = [
-        "batsman", "bowler", "city",
-        "total_runs", "balls",
-        "wickets",
-        "avg_total_runs"
+        "batsman","bowler","city",
+        "runs_sum","balls",
+        "avg_phase","avg_position",
+        "avg_pressure","avg_innings"
     ]
 
-    # target: runs per ball
-    grouped["runs_per_ball"] = grouped["total_runs"] / grouped["balls"]
+    k = np.maximum(10, 50 - grouped["balls"])
+    grouped["runs_per_ball"] = (
+        grouped["runs_sum"] + global_avg * k
+    ) / (grouped["balls"] + k)
 
-    # batsman overall avg
-    bat_avg = df.groupby("batsman")["batsman_runs"].mean()
-    grouped["bat_avg"] = grouped["batsman"].map(bat_avg)
+    grouped["bat_avg"] = grouped["batsman"].map(
+        df.groupby("batsman")["batsman_runs"].mean()
+    )
 
-    # bowler economy
-    bowl_eco = df.groupby("bowler")["total_runs"].mean()
-    grouped["bowl_eco"] = grouped["bowler"].map(bowl_eco)
+    grouped["bowl_impact"] = grouped["bowler"].map(
+        df.groupby("bowler")["batsman_runs"].mean()
+    )
 
-    # venue scoring
-    venue_avg = df.groupby("city")["total_runs"].mean()
-    grouped["venue_avg"] = grouped["city"].map(venue_avg)
+    grouped["venue_avg"] = grouped["city"].map(
+        df.groupby("city")["batsman_runs"].mean()
+    )
 
-    # encoding
+    grouped["recent_form"] = grouped["batsman"].map(
+        df.groupby("batsman")["recent_form"].last()
+    )
+
+    grouped["confidence"] = np.log1p(grouped["balls"])
+    grouped["bat_vs_bowl"] = grouped["bat_avg"] - grouped["bowl_impact"]
+
     grouped["bat_enc"] = grouped["batsman"].astype("category").cat.codes
     grouped["bowl_enc"] = grouped["bowler"].astype("category").cat.codes
     grouped["city_enc"] = grouped["city"].astype("category").cat.codes
 
-    return grouped.fillna(0)
+    grouped = grouped.replace([np.inf, -np.inf], 0).fillna(0)
+
+    return grouped
 
 
+# ==============================
+# TRAIN
+# ==============================
 @st.cache_resource
 def train_model(df):
 
     features = [
-        "bat_enc", "bowl_enc", "city_enc",
-        "bat_avg", "bowl_eco", "venue_avg",
-        "wickets", "balls"
+        "bat_enc","bowl_enc","city_enc",
+        "bat_avg","recent_form",
+        "bowl_impact","venue_avg",
+        "avg_phase","avg_position",
+        "avg_pressure","avg_innings",
+        "balls","confidence",
+        "bat_vs_bowl"
     ]
 
-    target = "runs_per_ball"
+    X = df[features]
+    y = df["runs_per_ball"]
 
-    split = int(len(df) * 0.8)
-
-    train = df.iloc[:split]
-    test = df.iloc[split:]
-
-    X_train, y_train = train[features], train[target]
-    X_test, y_test = test[features], test[target]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     model = XGBRegressor(
-        n_estimators=300,
-        max_depth=6,
+        n_estimators=500,
+        max_depth=5,
         learning_rate=0.05,
         subsample=0.9,
         colsample_bytree=0.9,
@@ -99,65 +136,134 @@ def train_model(df):
     return model, features, score
 
 
+# ==============================
+# PREDICT
+# ==============================
 def predict_runs(df, model, features, batsman, bowler, city, balls):
 
     data = df[
-        (df["batsman"] == batsman) &
-        (df["bowler"] == bowler) &
-        (df["city"] == city)
+        (df["batsman"]==batsman)&
+        (df["bowler"]==bowler)&
+        (df["city"]==city)
     ]
 
-    if len(data) == 0:
+    if len(data)==0:
         return None
 
     row = data.iloc[0]
-    X = row[features].values.reshape(1, -1)
+    X = row[features].values.reshape(1,-1)
 
-    runs_per_ball = model.predict(X)[0]
+    rpb = model.predict(X)[0]
 
-    return round(runs_per_ball * balls, 2)
+    rpb = np.clip(rpb, 0.2, 3.0)
+    rpb = 0.7 * rpb + 0.3 * row["bat_avg"]
+
+    runs = rpb * balls
+
+    # smart uncertainty
+    base = 1.5
+    reliability = 1 / (1 + np.log1p(row["balls"]))
+    horizon = np.sqrt(balls)
+
+    unc = base * (1 + 2 * reliability) * horizon
+    unc = np.clip(unc, 2, 8)
+
+    return int(round(runs)), int(round(unc))
 
 
 # ==============================
 # UI
 # ==============================
-st.title("🏏 IPL Predictor (Stable Model)")
+
+st.title("🏏 IPL Predictor Dashboard")
 
 df = load_data()
 data = create_dataset(df)
-model, features, score = train_model(data)
+model,features,score = train_model(data)
 
-st.sidebar.write("Model R²:", round(score, 3))
+st.sidebar.metric("Model R²", round(score,3))
 
-mode = st.radio("Mode", ["Batsman First", "Bowler First"])
+# INPUTS
+st.subheader("🎯 Select Match Context")
 
-if mode == "Batsman First":
+c1, c2, c3 = st.columns(3)
+
+with c1:
     batsman = st.selectbox("Batsman", sorted(data["batsman"].unique()))
-    bowlers = data[data["batsman"] == batsman]["bowler"].unique()
-    bowler = st.selectbox("Bowler", sorted(bowlers))
-else:
-    bowler = st.selectbox("Bowler", sorted(data["bowler"].unique()))
-    batsmen = data[data["bowler"] == bowler]["batsman"].unique()
-    batsman = st.selectbox("Batsman", sorted(batsmen))
 
-cities = data[
-    (data["batsman"] == batsman) &
-    (data["bowler"] == bowler)
-]["city"].unique()
+with c2:
+    bowler = st.selectbox(
+        "Bowler",
+        sorted(data[data["batsman"] == batsman]["bowler"].unique())
+    )
 
-if len(cities) == 0:
-    st.error("No city data available")
-    st.stop()
+with c3:
+    cities = data[
+        (data["batsman"]==batsman)&
+        (data["bowler"]==bowler)
+    ]["city"].unique()
 
-city = st.selectbox("City", sorted(cities))
+    if len(cities)==0:
+        st.error("No city data available")
+        st.stop()
 
-if st.button("Predict"):
+    city = st.selectbox("City", sorted(cities))
+
+
+# PLAYER INSIGHTS
+row = data[
+    (data["batsman"]==batsman)&
+    (data["bowler"]==bowler)&
+    (data["city"]==city)
+]
+
+if len(row) > 0:
+    row = row.iloc[0]
+
+    st.subheader("📈 Player Insights")
+
+    i1, i2, i3, i4 = st.columns(4)
+    i1.metric("Bat Avg", round(row["bat_avg"],2))
+    i2.metric("Form", round(row["recent_form"],2))
+    i3.metric("Bowler Impact", round(row["bowl_impact"],2))
+    i4.metric("Confidence", round(row["confidence"],2))
+
+
+# PREDICTION
+if st.button("🚀 Predict"):
+
     st.subheader("📊 Predictions")
 
-    for balls in [30, 40, 50]:
-        result = predict_runs(data, model, features, batsman, bowler, city, balls)
+    balls_list = [10,20,30]
+    runs_list, lower, upper = [], [], []
+
+    for balls in balls_list:
+        result = predict_runs(data,model,features,batsman,bowler,city,balls)
 
         if result:
-            st.success(f"{balls} balls → {result} runs")
-        else:
-            st.write(f"{balls} balls → No data")
+            r,u = result
+            runs_list.append(r)
+            lower.append(r-u)
+            upper.append(r+u)
+
+            st.success(f"{balls} balls → {r} runs (±{u})")
+
+    # CHARTS
+    st.subheader("📈 Performance Trends")
+
+    colA, colB = st.columns(2)
+
+    with colA:
+        trend_df = pd.DataFrame({
+            "Balls": balls_list,
+            "Runs": runs_list
+        })
+        st.line_chart(trend_df.set_index("Balls"))
+
+    with colB:
+        band_df = pd.DataFrame({
+            "Balls": balls_list,
+            "Lower": lower,
+            "Upper": upper
+        })
+        st.area_chart(band_df.set_index("Balls"))
