@@ -1,5 +1,5 @@
 # 🏏 IPL AI Predictor  
-### ⚡ Player vs Player Performance Simulation Engine
+### ⚡ Context-Aware Player vs Player Performance Engine
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![Streamlit](https://img.shields.io/badge/UI-Streamlit-ff4b4b?logo=streamlit)
@@ -13,39 +13,44 @@
 
 Predict how a batsman performs against a bowler **before the match even starts**.
 
-This project is an AI-powered cricket analytics system that simulates real match scenarios and predicts:
+This is an AI-powered cricket analytics system that simulates realistic match scenarios and predicts:
 
-- 🔥 Runs in next 30 balls  
-- ⚡ Runs in next 40 balls  
-- 🚀 Runs in next 50 balls  
+- 🔥 Runs in next 10 balls  
+- ⚡ Runs in next 20 balls  
+- 🚀 Runs in next 30 balls  
+- 📊 Prediction range with uncertainty (± runs)  
 
 ---
 
 ## 🧠 Why This Project?
 
 Traditional cricket stats show:
-- Average ❌  
+
+- Batting average ❌  
 - Strike rate ❌  
 
 But they don’t answer:
 
-> What will happen *now* in this matchup under pressure?
+> What will happen *right now* in this matchup?
 
 This project solves that using:
+
 - Context-aware machine learning  
-- Simulation-based prediction  
 - Player vs player intelligence  
+- Simulation-based prediction  
+- Uncertainty-aware outputs  
 
 ---
 
 ## 🎯 Features
 
-- ✨ Modern interactive UI (Streamlit)  
+- ✨ Modern responsive UI (Streamlit dashboard)  
 - 🎯 Player vs Player selection  
-- 🌍 Smart city filtering  
+- 🌍 Smart city-based filtering  
 - ⚡ Fast predictions (cached model)  
-- 📊 Multi-scenario simulation  
-- 🧠 Context-aware modeling  
+- 📊 Visual analytics (trend + uncertainty charts)  
+- 🧠 Smart uncertainty engine  
+- 📈 Player insights (form, impact, confidence)  
 
 ---
 
@@ -63,42 +68,48 @@ This project solves that using:
 
 ## 🧠 Model Intelligence
 
-The model captures multiple dimensions:
+The model captures multiple real-world cricket factors:
 
 ### 🔹 Player Form
-- Recent runs  
-- Strike rate trend  
+- Batting average  
+- Rolling recent performance  
 
 ### 🔹 Match Context
-- Current run rate  
-- Wickets fallen  
-- Pressure index  
+- Pressure (target-based)  
+- Match situation awareness  
 
-### 🔹 Game Phases
-- Powerplay behavior  
-- Death overs strategy  
+### 🔹 Player Matchup
+- Batsman vs Bowler interaction  
+- Historical performance patterns  
 
 ### 🔹 Venue Effect
-- Stadium scoring patterns  
+- Stadium scoring behavior  
+
+### 🔹 Stability Layer
+- Bayesian smoothing to reduce noise  
+- Prediction clipping to avoid unrealistic outputs  
 
 ---
 
 ## 📊 Example Output
 
-30 balls → 38 runs  
-40 balls → 52 runs  
-50 balls → 65 runs  
+```
+10 balls → 13 runs (±2)
+20 balls → 26 runs (±4)
+30 balls → 39 runs (±6)
+```
 
 ---
 
 ## 📁 Project Structure
 
-project/  
-│  
-├── app.py  
-├── deliveries.csv (not included)  
-├── matches.csv (not included)  
-├── README.md  
+```
+project/
+│
+├── app.py
+├── new_ipl.csv
+├── README.md
+```
 
 ---
 
@@ -107,44 +118,48 @@ project/
 Dataset is not included due to GitHub size limits.
 
 Download from:  
-https://www.kaggle.com/datasets/patrickb1912/ipl-complete-dataset-20082020  
+https://www.kaggle.com/datasets/chaitu20/ipl-dataset2008-2025  
 
-Place in project folder:  
-- deliveries.csv  
-- matches.csv  
+Place file in project folder:
+- new_ipl.csv  
 
 ---
 
 ## ▶️ Run Locally
 
 ### Install dependencies
-pip install streamlit pandas numpy xgboost scikit-learn  
+```
+pip install streamlit pandas numpy xgboost scikit-learn
+```
 
 ### Run app
-streamlit run app.py  
+```
+streamlit run app.py
+```
 
 ### Open browser
-http://localhost:8501  
+```
+http://localhost:8501
+```
 
 ---
 
 ## ⚠️ Current Limitations
 
-- Low model accuracy (~0.05 R²)  
-- Uses latest matchup snapshot only  
-- No confidence intervals  
-- No explainability layer  
+- Moderate model accuracy (~0.1–0.2 R²)  
+- No live match inputs (wickets, required rate)  
+- Limited contextual depth  
 
 ---
 
 ## 🚀 Future Roadmap
 
-- Improve model accuracy  
-- Add confidence intervals  
-- Add “upper hand” prediction  
-- Add visual charts/dashboard  
+- Live match simulation (overs, wickets, target)  
+- Ball-by-ball prediction engine  
+- Player role classification  
+- Deep learning models (LSTM)  
+- Improve accuracy  
 - Deploy online  
-- Add feature importance  
 
 ---
 
@@ -152,7 +167,7 @@ http://localhost:8501
 
 - Feature engineering matters more than model choice  
 - Sports data is highly contextual  
-- Simulation improves realism  
+- Stability improves predictions  
 - UI is critical in ML systems  
 
 ---
@@ -161,15 +176,16 @@ http://localhost:8501
 
 ✔ Real IPL dataset  
 ✔ End-to-end ML pipeline  
-✔ Interactive web app  
+✔ Smart uncertainty modeling  
+✔ Interactive dashboard  
 ✔ Player vs player analytics  
-✔ Scalable design  
 
 ---
 
 ## 👨‍💻 Author
 
-Built as a portfolio-grade ML project for high-impact roles.
+**Rishik Mora**  
+Machine Learning Enthusiast  
 
 ---
 
