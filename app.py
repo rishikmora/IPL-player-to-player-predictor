@@ -7,7 +7,77 @@ from sklearn.model_selection import train_test_split
 
 DATA_PATH = "new_ipl.csv"
 
-st.set_page_config(page_title="IPL Predictor", layout="wide")
+# ==============================
+# PAGE CONFIG
+# ==============================
+st.set_page_config(
+    page_title="IPL Predictor",
+    layout="wide",
+    page_icon="🏏"
+)
+
+# ==============================
+# MODERN CSS 🔥
+# ==============================
+st.markdown("""
+<style>
+
+body {
+    background-color: #0e1117;
+}
+
+.main {
+    background: linear-gradient(135deg, #0e1117, #1c1f2b);
+}
+
+/* Cards */
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+.card:hover {
+    transform: scale(1.02);
+}
+
+/* Title */
+.title {
+    font-size: 40px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Button */
+.stButton>button {
+    background: linear-gradient(90deg, #ff4b2b, #ff416c);
+    color: white;
+    border-radius: 10px;
+    height: 3em;
+    width: 100%;
+    font-size: 18px;
+}
+.stButton>button:hover {
+    transform: scale(1.05);
+}
+
+/* Sidebar */
+.css-1d391kg {
+    background-color: #111827;
+}
+
+/* Metrics */
+.metric-card {
+    text-align: center;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ==============================
 # LOAD
@@ -25,7 +95,6 @@ def load_data():
     df = df.dropna(subset=["batsman", "bowler", "city", "over"])
 
     return df
-
 
 # ==============================
 # CREATE DATASET
@@ -95,7 +164,6 @@ def create_dataset(df):
 
     return grouped
 
-
 # ==============================
 # TRAIN
 # ==============================
@@ -135,7 +203,6 @@ def train_model(df):
 
     return model, features, score
 
-
 # ==============================
 # PREDICT
 # ==============================
@@ -154,13 +221,11 @@ def predict_runs(df, model, features, batsman, bowler, city, balls):
     X = row[features].values.reshape(1,-1)
 
     rpb = model.predict(X)[0]
-
     rpb = np.clip(rpb, 0.2, 3.0)
     rpb = 0.7 * rpb + 0.3 * row["bat_avg"]
 
     runs = rpb * balls
 
-    # smart uncertainty
     base = 1.5
     reliability = 1 / (1 + np.log1p(row["balls"]))
     horizon = np.sqrt(balls)
@@ -170,21 +235,20 @@ def predict_runs(df, model, features, batsman, bowler, city, balls):
 
     return int(round(runs)), int(round(unc))
 
-
 # ==============================
 # UI
 # ==============================
 
-st.title("🏏 IPL Predictor Dashboard")
+st.markdown('<p class="title">🏏 IPL AI Predictor</p>', unsafe_allow_html=True)
 
 df = load_data()
 data = create_dataset(df)
 model,features,score = train_model(data)
 
-st.sidebar.metric("Model R²", round(score,3))
+st.sidebar.metric("Model Accuracy (R²)", round(score,3))
 
 # INPUTS
-st.subheader("🎯 Select Match Context")
+st.markdown("### 🎯 Match Context")
 
 c1, c2, c3 = st.columns(3)
 
@@ -209,7 +273,6 @@ with c3:
 
     city = st.selectbox("City", sorted(cities))
 
-
 # PLAYER INSIGHTS
 row = data[
     (data["batsman"]==batsman)&
@@ -220,19 +283,19 @@ row = data[
 if len(row) > 0:
     row = row.iloc[0]
 
-    st.subheader("📈 Player Insights")
+    st.markdown("### 📊 Player Insights")
 
     i1, i2, i3, i4 = st.columns(4)
-    i1.metric("Bat Avg", round(row["bat_avg"],2))
-    i2.metric("Form", round(row["recent_form"],2))
-    i3.metric("Bowler Impact", round(row["bowl_impact"],2))
-    i4.metric("Confidence", round(row["confidence"],2))
 
+    i1.markdown(f'<div class="metric-card">🔥 Bat Avg<br><h2>{round(row["bat_avg"],2)}</h2></div>', unsafe_allow_html=True)
+    i2.markdown(f'<div class="metric-card">📈 Form<br><h2>{round(row["recent_form"],2)}</h2></div>', unsafe_allow_html=True)
+    i3.markdown(f'<div class="metric-card">🎯 Bowler Impact<br><h2>{round(row["bowl_impact"],2)}</h2></div>', unsafe_allow_html=True)
+    i4.markdown(f'<div class="metric-card">⚡ Confidence<br><h2>{round(row["confidence"],2)}</h2></div>', unsafe_allow_html=True)
 
 # PREDICTION
-if st.button("🚀 Predict"):
+st.markdown("### 🚀 Run Prediction")
 
-    st.subheader("📊 Predictions")
+if st.button("Predict Now"):
 
     balls_list = [10,20,30]
     runs_list, lower, upper = [], [], []
@@ -248,8 +311,7 @@ if st.button("🚀 Predict"):
 
             st.success(f"{balls} balls → {r} runs (±{u})")
 
-    # CHARTS
-    st.subheader("📈 Performance Trends")
+    st.markdown("### 📈 Performance Trends")
 
     colA, colB = st.columns(2)
 
