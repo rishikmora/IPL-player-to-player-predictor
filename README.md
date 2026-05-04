@@ -195,4 +195,4 @@ This is not just a model — it is a cricket analytics decision system.
 
 ---
 
-⭐ If you like this project, consider giving it a star!
+⭐ If you like this project, consider giving it a star!!
