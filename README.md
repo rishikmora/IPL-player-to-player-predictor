@@ -1,56 +1,90 @@
-# 🏏 IPL AI Predictor  
-### ⚡ Context-Aware Player vs Player Performance Engine
+# ⚡ AlgoLens  
+### 🎨 Cinematic Algorithm Visualization & DSA Learning Platform
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/UI-Streamlit-ff4b4b?logo=streamlit)
-![XGBoost](https://img.shields.io/badge/Model-XGBoost-green)
+![HTML5](https://img.shields.io/badge/HTML5-Markup-orange?logo=html5)
+![CSS3](https://img.shields.io/badge/CSS3-Styling-blue?logo=css3)
+![JavaScript](https://img.shields.io/badge/JavaScript-Visualization-yellow?logo=javascript)
+![Responsive](https://img.shields.io/badge/UI-Responsive-success?logo=css3)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+
+<br>
+
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=html,css,js,vscode,git,github" />
+</p>
 
 ---
 
 ## 🚀 Live Idea
 
-Predict how a batsman performs against a bowler **before the match even starts**.
+Learn algorithms visually instead of memorizing theory.
 
-This is an AI-powered cricket analytics system that simulates realistic match scenarios and predicts:
+AlgoLens is an interactive DSA visualization engine that allows users to:
 
-- 🔥 Runs in next 10 balls  
-- ⚡ Runs in next 20 balls  
-- 🚀 Runs in next 30 balls  
-- 📊 Prediction range with uncertainty (± runs)  
+- 🎥 Watch algorithms execute step-by-step  
+- ⚡ Visualize comparisons, swaps & recursion  
+- 🧠 Understand algorithm flow through pseudocode tracing  
+- 📊 Analyze complexity & execution behavior in real time  
+- 🎛 Replay and scrub through execution timelines  
 
 ---
 
 ## 🧠 Why This Project?
 
-Traditional cricket stats show:
+Most DSA learning platforms only provide:
 
-- Batting average ❌  
-- Strike rate ❌  
+- Static explanations ❌  
+- Plain code implementations ❌  
+- Non-interactive visuals ❌  
+- Minimal execution understanding ❌  
 
-But they don’t answer:
+But they fail to answer:
 
-> What will happen *right now* in this matchup?
+> What is actually happening internally during execution?
 
-This project solves that using:
+AlgoLens solves that using:
 
-- Context-aware machine learning  
-- Player vs player intelligence  
-- Simulation-based prediction  
-- Uncertainty-aware outputs  
+- Real-time visualization  
+- Interactive playback engine  
+- Execution replay system  
+- State-based rendering  
+- Pseudocode synchronization  
+- Educational animation design  
 
 ---
 
 ## 🎯 Features
 
-- ✨ Modern responsive UI (Streamlit dashboard)  
-- 🎯 Player vs Player selection  
-- 🌍 Smart city-based filtering  
-- ⚡ Fast predictions (cached model)  
-- 📊 Visual analytics (trend + uncertainty charts)  
-- 🧠 Smart uncertainty engine  
-- 📈 Player insights (form, impact, confidence)  
+- ✨ Modern cinematic dark UI  
+- 🎛 Interactive playback controls  
+- ⚡ Real-time algorithm execution  
+- 📊 Live comparisons & swaps tracking  
+- 🧠 Active pseudocode highlighting  
+- 🎚 Timeline scrubber system  
+- 📈 Complexity analysis panel  
+- 🎲 Random / reversed / nearly sorted arrays  
+- 📱 Fully responsive layout  
+- ♿ Accessibility-first interactions  
+- ⌨️ Keyboard shortcut support  
+
+---
+
+## 🧩 Supported Algorithms
+
+### 🔹 Sorting Algorithms
+
+- Bubble Sort  
+- Selection Sort  
+- Insertion Sort  
+- Merge Sort  
+- Quick Sort  
+- Heap Sort  
+
+### 🔹 Searching Algorithms
+
+- Linear Search  
+- Binary Search  
 
 ---
 
@@ -58,140 +92,165 @@ This project solves that using:
 
 | Layer | Technology |
 |------|-----------|
-| Frontend | Streamlit |
-| Backend | Python |
-| ML Model | XGBoost |
-| Data | IPL Ball-by-Ball Dataset |
-| Processing | Pandas, NumPy |
+| Frontend | HTML5 |
+| Styling | CSS3 |
+| Logic Engine | Vanilla JavaScript |
+| Visualization | DOM Rendering |
+| UI System | Custom Design System |
+| Animations | CSS Transitions |
 
 ---
 
-## 🧠 Model Intelligence
+## 🧠 Visualization Intelligence
 
-The model captures multiple real-world cricket factors:
+The visualization engine captures multiple algorithmic states:
 
-### 🔹 Player Form
-- Batting average  
-- Rolling recent performance  
+### 🔹 Execution States
+- Comparisons  
+- Swaps  
+- Writes  
+- Active indices  
+- Sorted regions  
 
-### 🔹 Match Context
-- Pressure (target-based)  
-- Match situation awareness  
+### 🔹 Recursive Awareness
+- Merge partitions  
+- Quick sort pivots  
+- Search ranges  
+- Recursive boundaries  
 
-### 🔹 Player Matchup
-- Batsman vs Bowler interaction  
-- Historical performance patterns  
+### 🔹 Educational Layer
+- Live pseudocode mapping  
+- Execution explanations  
+- Complexity insights  
+- Visual learning system  
 
-### 🔹 Venue Effect
-- Stadium scoring behavior  
-
-### 🔹 Stability Layer
-- Bayesian smoothing to reduce noise  
-- Prediction clipping to avoid unrealistic outputs  
+### 🔹 Playback System
+- Replay support  
+- Timeline scrubbing  
+- Speed controls  
+- Step-by-step execution  
 
 ---
 
-## 📊 Example Output
+## 📊 Example Visualization Events
 
-```
-10 balls → 13 runs (±2)
-20 balls → 26 runs (±4)
-30 balls → 39 runs (±6)
-```
+```text
+Compare arr[3] vs arr[4]
+Swap elements
+Highlight pivot
+Merge partitions
+Mark sorted region
+````
 
 ---
 
 ## 📁 Project Structure
 
-```
-project/
+```bash
+AlgoLens/
 │
-├── app.py
-├── new_ipl.csv
+├── index.html
 ├── README.md
+│
+└── assets/
+    └── preview.png
 ```
-
----
-
-## ⚠️ Dataset Setup
-
-Dataset is not included due to GitHub size limits.
-
-Download from:  
-https://www.kaggle.com/datasets/chaitu20/ipl-dataset2008-2025  
-
-Place file in project folder:
-- new_ipl.csv  
 
 ---
 
 ## ▶️ Run Locally
 
-### Install dependencies
-```
-pip install streamlit pandas numpy xgboost scikit-learn
+### Clone repository
+
+```bash
+git clone https://github.com/your-username/algolens.git
 ```
 
-### Run app
-```
-streamlit run app.py
+### Open project
+
+```bash
+cd algolens
 ```
 
-### Open browser
+### Run application
+
+```bash
+open index.html
 ```
-http://localhost:8501
-```
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Key     | Action              |
+| ------- | ------------------- |
+| `Space` | Play / Pause        |
+| `←`     | Previous Step       |
+| `→`     | Next Step           |
+| `R`     | Reset Visualization |
 
 ---
 
 ## ⚠️ Current Limitations
 
-- Moderate model accuracy (~0.1–0.2 R²)  
-- No live match inputs (wickets, required rate)  
-- Limited contextual depth  
+* Limited to sorting & searching algorithms
+* No graph algorithm visualizations yet
+* No backend persistence system
+* Large arrays may reduce animation smoothness
+* No user-saved sessions yet
 
 ---
 
 ## 🚀 Future Roadmap
 
-- Live match simulation (overs, wickets, target)  
-- Ball-by-ball prediction engine  
-- Player role classification  
-- Deep learning models (LSTM)  
-- Improve accuracy  
-- Deploy online  
+* Graph Algorithms Visualization
+* Pathfinding Simulations
+* Tree Traversal Engine
+* Dynamic Programming Visualizer
+* Code Editor Sandbox
+* Multi-language Implementations
+* Performance Benchmarking
+* User Accounts & Saved Sessions
+* AI-generated Explanations
+* Competitive Programming Mode
+* WebAssembly optimization
 
 ---
 
 ## 🧠 Key Learnings
 
-- Feature engineering matters more than model choice  
-- Sports data is highly contextual  
-- Stability improves predictions  
-- UI is critical in ML systems  
+* Visualization improves algorithm understanding
+* UI/UX plays a major role in education tools
+* State management is critical for replay systems
+* Animation timing affects learning experience
+* Vanilla JavaScript can build production-grade systems
+* Educational software requires strong interaction design
 
 ---
 
 ## 🏆 Highlights
 
-✔ Real IPL dataset  
-✔ End-to-end ML pipeline  
-✔ Smart uncertainty modeling  
-✔ Interactive dashboard  
-✔ Player vs player analytics  
+✔ Real-time visualization engine
+✔ Fully interactive execution system
+✔ Modern responsive UI
+✔ Pseudocode synchronization
+✔ Complexity analysis support
+✔ Accessibility-focused design
+✔ Interactive replay controls
+✔ Educational animation workflow
 
 ---
 
 ## 👨‍💻 Author
 
-**Rishik Mora**  
-Machine Learning Enthusiast  
+**Rishik Mora**
+Full Stack & AI/ML Developer
 
 ---
 
 ## 🔥 Final Note
 
-This is not just a model — it is a cricket analytics decision system.
+AlgoLens is not just a visualizer — it is an interactive algorithm learning experience designed to make DSA intuitive, immersive, and visually understandable.
 
 ---
 
