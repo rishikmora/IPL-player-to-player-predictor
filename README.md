@@ -1,4 +1,4 @@
-# ⚡ AlgoLens   
+# ⚡ AlgoLens    
 ### 🎨 Cinematic Algorithm Visualization & DSA Learning Platform
 
 ![HTML5](https://img.shields.io/badge/HTML5-Markup-orange?logo=html5)
